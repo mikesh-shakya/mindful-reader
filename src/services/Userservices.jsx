@@ -98,3 +98,13 @@ export const getUserByUserId = async (userId) => {
     throw handleAxiosError(err);
   }
 };
+
+// Update a user by userId
+export const updateUser = async (userId, user) => {
+  try {
+      const { data } = await privateAxios.patch(`/users/${userId}`, user);
+      return data;
+    } catch (err) {
+      throw handleAxiosError(err, "updating user");
+    }
+}

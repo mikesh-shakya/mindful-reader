@@ -1,59 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "react-toastify";
+import { getAllAuthors } from "@/services/AuthorService";
 import { APIROUTE } from "@/config/constants";
-
-const DUMMY_AUTHORS = [
-  {
-    id: "eckhart-tolle",
-    name: "Eckhart Tolle",
-    theme: "Mindfulness",
-    tagline: "Author of 'The Power of Now' and 'Stillness Speaks'",
-    bio: "Writes about presence, awareness, and finding peace within.",
-    quote: "Realize deeply that the present moment is all you ever have.",
-    avatar: "/illustrations/undraw_male_avatar.svg",
-  },
-  {
-    id: "tara-brach",
-    name: "Tara Brach",
-    theme: "Reflection",
-    tagline: "Author of 'Radical Acceptance' and 'Radical Compassion'",
-    bio: "Brings mindfulness and compassion together for healing.",
-    quote: "The boundary to what we can accept is the boundary to our freedom.",
-    avatar: "/illustrations/undraw_female_avatar.svg",
-  },
-  {
-    id: "paulo-coelho",
-    name: "Paulo Coelho",
-    theme: "Philosophy",
-    tagline: "Author of 'The Alchemist'",
-    bio: "Weaves stories of destiny, courage, and purpose.",
-    quote:
-      "When you want something, all the universe conspires in helping you to achieve it.",
-    avatar: "/illustrations/undraw_male_avatar.svg",
-  },
-  {
-    id: "mary-oliver",
-    name: "Mary Oliver",
-    theme: "Poetry",
-    tagline: "Poet of nature and reflection",
-    bio: "Finds the divine in stillness, simplicity, and the natural world.",
-    quote:
-      "Tell me, what is it you plan to do with your one wild and precious life?",
-    avatar: "/illustrations/undraw_female_avatar.svg",
-  },
-  {
-    id: "thich-nhat-hanh",
-    name: "Thich Nhat Hanh",
-    theme: "Mindfulness",
-    tagline: "Zen master and peace activist",
-    bio: "Wrote about the art of mindful living and interbeing.",
-    quote: "Smile, breathe, and go slowly.",
-    avatar: "/illustrations/undraw_male_avatar.svg",
-  },
-];
+import { DEFAULTS, safeGet } from "@/config/defaults";
 
 const THEMES = [
   "All",
@@ -65,19 +18,40 @@ const THEMES = [
 ];
 
 export default function DiscoverAuthorsPage() {
+  const [authors, setAuthors] = useState([]);
   const [activeTheme, setActiveTheme] = useState("All");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
+  // 🌿 Fetch authors from backend
+  useEffect(() => {
+    const fetchAuthors = async () => {
+      setLoading(true);
+      try {
+        const data = await getAllAuthors({ limit: 30 });
+        setAuthors(data?.items || []);
+      } catch (err) {
+        toast.error(
+          err?.friendlyMessage || "Unable to fetch authors right now."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAuthors();
+  }, []);
+
+  // 🪶 Filter authors by theme and search input
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return DUMMY_AUTHORS.filter((a) => {
+    return authors.filter((a) => {
       const themeOk = activeTheme === "All" ? true : a.theme === activeTheme;
-      const text = (a.name + " " + a.bio).toLowerCase();
+      const text = (a.fullName + " " + a.bio).toLowerCase();
       const searchOk = q ? text.includes(q) : true;
       return themeOk && searchOk;
     });
-  }, [activeTheme, search]);
+  }, [authors, activeTheme, search]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -91,15 +65,15 @@ export default function DiscoverAuthorsPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F5] text-[#3E5E4D] px-6 py-12">
-      {/* Hero */}
+      {/* 🌸 Hero Section */}
       <header className="max-w-4xl mx-auto text-center mb-10 animate-fadeIn">
         <div
           style={{ animation: "float 7s ease-in-out infinite" }}
           className="mx-auto mb-6 w-[220px]"
         >
           <Image
-            src="/illustrations/writer.svg"
-            alt="Writers illustration"
+            src={DEFAULTS.illustrations.reader}
+            alt="Authors illustration"
             width={220}
             height={160}
             className="mx-auto w-full h-auto object-contain"
@@ -115,9 +89,10 @@ export default function DiscoverAuthorsPage() {
         </p>
       </header>
 
-      {/* Theme Filter + Search */}
+      {/* 🎨 Theme Filters + Search */}
       <section className="max-w-5xl mx-auto mb-8">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
+          {/* Theme pills */}
           <div className="flex flex-wrap gap-3 justify-center md:justify-start">
             {THEMES.map((t) => {
               const active =
@@ -139,7 +114,7 @@ export default function DiscoverAuthorsPage() {
             })}
           </div>
 
-          {/* Soft Search */}
+          {/* Search */}
           <form
             onSubmit={handleSearch}
             className="ml-auto flex items-center gap-3 w-full md:max-w-sm"
@@ -167,16 +142,20 @@ export default function DiscoverAuthorsPage() {
 
       <hr className="max-w-5xl mx-auto border-t border-[#E7DCCB]/50 my-12" />
 
-      {/* Author Grid */}
+      {/* 🪶 Author Grid */}
       <main className="max-w-6xl mx-auto transition-opacity duration-300">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <p className="text-center text-[#6B705C] italic py-10">
+            Fetching mindful voices...
+          </p>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-20 animate-fadeIn">
             <div
               style={{ animation: "float 6s ease-in-out infinite" }}
               className="mx-auto mb-6 w-40"
             >
               <Image
-                src="/illustrations/meditation.svg"
+                src={DEFAULTS.illustrations.meditation}
                 alt="Empty state illustration"
                 width={160}
                 height={160}
@@ -184,7 +163,7 @@ export default function DiscoverAuthorsPage() {
               />
             </div>
             <h2 className="font-['Playfair Display'] text-2xl font-semibold mb-3">
-              No voices found for this theme yet.
+              No authors found for this theme yet.
             </h2>
             <p className="text-[#6B705C] max-w-xl mx-auto">
               Try another theme or search for an author you love.
@@ -194,15 +173,21 @@ export default function DiscoverAuthorsPage() {
           <section className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((a) => (
               <Link
-                key={a.id}
-                href={`${APIROUTE.singleAuthor}${a.id}`}
+                key={a.authorId}
+                href={`${APIROUTE.singleAuthor}${a.authorId}`}
                 className="block bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-[#A8BDA5]"
               >
                 <div className="flex flex-col items-center text-center">
                   <div className="w-24 h-24 mb-4 rounded-full overflow-hidden bg-[#f1efe9] border border-[#e9e4db]">
                     <Image
-                      src={a.avatar}
-                      alt={`${a.name} portrait`}
+                      src={safeGet(
+                        a.profilePictureUrl,
+                        DEFAULTS.author.profilePictureUrl
+                      )}
+                      alt={`${safeGet(
+                        a.fullName,
+                        DEFAULTS.author.fullName
+                      )} portrait`}
                       width={100}
                       height={100}
                       className="object-cover w-full h-full"
@@ -210,13 +195,13 @@ export default function DiscoverAuthorsPage() {
                   </div>
 
                   <h3 className="font-['Playfair Display'] text-xl font-semibold text-[#2b2b2b]">
-                    {a.name}
+                    {safeGet(a.fullName, DEFAULTS.author.fullName)}
                   </h3>
-                  <p className="text-sm text-[#6b705c] mt-1 mb-2">
-                    {a.tagline}
+                  <p className="text-sm text-[#6b705c] mt-1 mb-2 italic">
+                    {safeGet(a.bio, DEFAULTS.author.bio)}
                   </p>
                   <p className="text-sm text-[#4A5B4D] leading-relaxed italic mb-4">
-                    “{a.quote}”
+                    “{safeGet(a.quote, DEFAULTS.author.quote)}”
                   </p>
 
                   <span className="text-sm text-[#A8BDA5] font-semibold hover:underline">
@@ -229,7 +214,7 @@ export default function DiscoverAuthorsPage() {
         )}
       </main>
 
-      {/* Reflective Footer Quote */}
+      {/* 🌿 Reflective Footer Quote */}
       <footer
         className="max-w-3xl mx-auto text-center mt-16"
         style={{
@@ -238,13 +223,10 @@ export default function DiscoverAuthorsPage() {
           animationDelay: "1.2s",
         }}
       >
-        <p className="italic text-[#4A5B4D]">
-          “A writer only begins a book. A reader finishes it.”
-        </p>
-        <p className="mt-2 text-sm text-[#6B705C]">— Samuel Johnson</p>
+        <p className="italic text-[#4A5B4D]">{DEFAULTS.quotes[1]}</p>
       </footer>
 
-      {/* Soft Join CTA */}
+      {/* 🌼 Join CTA */}
       <div className="max-w-3xl mx-auto mt-20 text-center bg-[#A8BDA5]/10 border border-[#A8BDA5]/30 rounded-2xl py-10 px-6 shadow-sm">
         <h2 className="font-['Playfair Display'] text-2xl font-semibold mb-3">
           Join Mindful Reader
@@ -253,14 +235,14 @@ export default function DiscoverAuthorsPage() {
           Connect with thoughtful voices and discover the stories that move you.
         </p>
         <Link
-          href={`${APIROUTE.signup}`}
+          href={APIROUTE.signup}
           className="bg-[#A8BDA5] text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-[#8FA98B]"
         >
           Get Started
         </Link>
       </div>
 
-      {/* Animations */}
+      {/* ✨ Animations */}
       <style jsx>{`
         @keyframes float {
           0%,

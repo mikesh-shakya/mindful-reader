@@ -8,7 +8,6 @@ import React, {
 } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-// import UserContext from "../../src/contexts/UserContext";
 import UserContext from "@/contexts/UserContext";
 import { doLogout } from "@/contexts/Auth";
 import FocusTrap from "@/components/FocusTrap";
@@ -19,15 +18,15 @@ const pagesBase = [
   { label: "Discover", path: "/discover" },
   // { label: "Books", path: "/books" },
   // { label: "Authors", path: "/authors" },
-  { label: "Add Author", path: "/add-author" },
+  // { label: "Add Author", path: "/add-author" },
   { label: "About", path: "/about" },
   { label: "Contact", path: "/contact" },
 ];
 
 const settings = [
   { label: "Profile", path: "/user/profile", type: "link" },
-  { label: "Account", path: "/account", type: "link" },
-  { label: "Dashboard", path: "/user/dashboard", type: "link" },
+  // { label: "Account", path: "/account", type: "link" },
+  // { label: "Dashboard", path: "/user/dashboard", type: "link" },
   { label: "Logout", path: "/logout", type: "action" },
 ];
 
