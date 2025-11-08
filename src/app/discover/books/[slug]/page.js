@@ -5,11 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { getBook } from "@/services/BooksService";
+import { getBook } from "@/services/BookService";
 import { DEFAULTS, safeGet } from "@/config/defaults";
 import { APIROUTE } from "@/config/constants";
 import BookReflections from "@/components/BookReflections";
 import SafeImage from "@/utilities/SafeImage";
+import { formatDate } from "@/utilities/DateFormatter";
 
 export default function BookDetailPage() {
   const { slug } = useParams();
@@ -126,11 +127,11 @@ export default function BookDetailPage() {
           </div>
           <div>
             <span className="block text-[#6B705C] font-medium">Pages</span>
-            {book.pages || "—"}
+            {book.pageCount || "-"}
           </div>
           <div>
             <span className="block text-[#6B705C] font-medium">Published</span>
-            {book.publishedYear || "—"}
+            {formatDate(book.publicationDate)}
           </div>
         </div>
       </section>

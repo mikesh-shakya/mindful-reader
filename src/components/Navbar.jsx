@@ -12,23 +12,7 @@ import UserContext from "@/contexts/UserContext";
 import { doLogout } from "@/contexts/Auth";
 import FocusTrap from "@/components/FocusTrap";
 import { APIROUTE } from "@/config/constants";
-
-const pagesBase = [
-  { label: "Home", path: "/" },
-  { label: "Discover", path: "/discover" },
-  // { label: "Books", path: "/books" },
-  // { label: "Authors", path: "/authors" },
-  // { label: "Add Author", path: "/add-author" },
-  { label: "About", path: "/about" },
-  { label: "Contact", path: "/contact" },
-];
-
-const settings = [
-  { label: "Profile", path: "/user/profile", type: "link" },
-  // { label: "Account", path: "/account", type: "link" },
-  // { label: "Dashboard", path: "/user/dashboard", type: "link" },
-  { label: "Logout", path: "/logout", type: "action" },
-];
+import {pagesBase, getUserSettings } from "@/config/navConfig";
 
 export default function NavBar() {
   const pathname = usePathname();
@@ -43,6 +27,7 @@ export default function NavBar() {
   const mobilePanelRef = useRef(null);
 
   const effectiveRole = user?.data?.role || contextRole || null;
+  const settings = getUserSettings(effectiveRole);
 
   const handleLogout = useCallback(() => {
     doLogout(() => {

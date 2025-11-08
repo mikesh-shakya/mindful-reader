@@ -6,7 +6,7 @@ import Link from "next/link";
 import { APIROUTE } from "@/config/constants";
 import { DEFAULTS, safeGet } from "@/config/defaults";
 import { toast } from "react-toastify";
-import { getAllBooks } from "@/services/BooksService";
+import { getAllBooks } from "@/services/BookService";
 import SafeImage from "@/utilities/SafeImage";
 
 const MOODS = [

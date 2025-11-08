@@ -22,6 +22,24 @@ export const getAllAuthors = async ({
   }
 };
 
+
+// 🪷 Get all authors (with pagination + optional search)
+export const getAuthorsLOV = async ({
+  offset = 0,
+  limit = 12,
+  orderBy,
+  name,
+} = {}) => {
+  try {
+    const { data } = await myAxios.get("/lov/authors", {
+      params: { offset, limit, orderBy, name },
+    });
+    return data;
+  } catch (err) {
+    throw handleAxiosError(err, "fetching authors");
+  }
+};
+
 // 🌼 Get a single author by ID
 export const getAuthor = async (authorId) => {
   try {

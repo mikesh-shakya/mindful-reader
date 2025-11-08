@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getAuthor } from "@/services/AuthorService";
-import { getAllBooksByAuthor } from "@/services/BooksService";
+import { getAllBooksByAuthor } from "@/services/BookService";
 import { toast } from "react-toastify";
 import { DEFAULTS, safeGet } from "@/config/defaults";
 import { APIROUTE } from "@/config/constants";
