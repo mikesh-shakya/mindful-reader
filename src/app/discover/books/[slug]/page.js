@@ -9,6 +9,7 @@ import { getBook } from "@/services/BooksService";
 import { DEFAULTS, safeGet } from "@/config/defaults";
 import { APIROUTE } from "@/config/constants";
 import BookReflections from "@/components/BookReflections";
+import SafeImage from "@/utilities/SafeImage";
 
 export default function BookDetailPage() {
   const { slug } = useParams();
@@ -72,13 +73,13 @@ export default function BookDetailPage() {
           style={{ animation: "float 6s ease-in-out infinite" }}
           className="w-[220px] md:w-[260px] shrink-0"
         >
-          <Image
-            src={safeGet(book.coverImageUrl, DEFAULTS.book.coverImageUrl)}
+          <SafeImage
+            src={book?.coverImageUrl}
+            fallbackSrc={DEFAULTS.book.coverImageUrl}
             alt={safeGet(book.title, DEFAULTS.book.title)}
             width={260}
             height={360}
-            className="rounded-lg shadow-md border border-[#E7DCCB] bg-white object-cover"
-            priority
+            className="object-cover w-full h-full"
           />
         </div>
 

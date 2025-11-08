@@ -8,7 +8,7 @@ import { handleAxiosError } from "./ErrorHandler";
 // 🔹 Get all books (with optional filters)
 export const getAllBooks = async ({ offset, limit, orderBy, title } = {}) => {
   try {
-    const { data } = await myAxios.get("/books", {
+    const { data } = await myAxios.get("/aggregated/books", {
       params: { offset, limit, orderBy, title },
     });
     return data;
@@ -20,7 +20,7 @@ export const getAllBooks = async ({ offset, limit, orderBy, title } = {}) => {
 // 🔹 Get single book by ID
 export const getBook = async (bookId) => {
   try {
-    const { data } = await myAxios.get(`/books/${bookId}`);
+    const { data } = await myAxios.get(`/aggregated/books/${bookId}`);
     return data;
   } catch (err) {
     throw handleAxiosError(err, "fetching book details");

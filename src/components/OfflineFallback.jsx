@@ -1,4 +1,5 @@
 "use client";
+import { DEFAULTS } from "@/config/defaults";
 import Image from "next/image";
 
 export default function OfflineFallback({
@@ -9,7 +10,7 @@ export default function OfflineFallback({
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center text-center text-[#3E5E4D] px-4 bg-[#FAF9F5] animate-fadeIn">
       <Image
-        src="/illustrations/connection-lost.svg"
+        src={DEFAULTS.illustrations.connectionLost}
         alt="Connection Lost"
         width={240}
         height={200}

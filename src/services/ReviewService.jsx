@@ -24,7 +24,7 @@ export const addOrUpdateReview = async (review) => {
  */
 export const getAllReviewsByBook = async (bookId) => {
   try {
-    const { data } = await myAxios.get(`/ratings/book/${bookId}`);
+    const { data } = await myAxios.get(`/aggregated/reviews/book/${bookId}`);
     return data;
   } catch (err) {
     throw handleAxiosError(err, "fetching book reflections");
@@ -37,7 +37,7 @@ export const getAllReviewsByBook = async (bookId) => {
  */
 export const getAllReviewsByUser = async (userId) => {
   try {
-    const { data } = await myAxios.get(`/ratings/user/${userId}`);
+    const { data } = await myAxios.get(`/aggregated/reviews/user/${userId}`);
     return data;
   } catch (err) {
     throw handleAxiosError(err, "fetching your reflections");

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { APIROUTE } from "@/config/constants";
+import { DEFAULTS } from "@/config/defaults";
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
@@ -29,7 +30,7 @@ export default function ContactPage() {
         className="flex justify-center mb-10"
       >
         <Image
-          src="/illustrations/contact-us.svg"
+          src={DEFAULTS.illustrations.contactUs}
           alt="Contact Mindful Reader"
           width={300}
           height={300}
@@ -125,7 +126,7 @@ export default function ContactPage() {
             className="flex justify-center mb-5"
           >
             <Image
-              src="/illustrations/thank-you.svg"
+              src={DEFAULTS.illustrations.thankYou}
               alt="Thank You Illustration"
               width={200}
               height={200}

@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { getAllAuthors } from "@/services/AuthorService";
 import { APIROUTE } from "@/config/constants";
 import { DEFAULTS, safeGet } from "@/config/defaults";
+import SafeImage from "@/utilities/SafeImage";
 
 const THEMES = [
   "All",
@@ -23,26 +24,57 @@ export default function DiscoverAuthorsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const observerRef = useRef(null);
 
   // 🌿 Fetch authors from backend
+  const fetchAuthors = async (newOffset = 0, append = false) => {
+    if (!hasMore && append) return;
+    const isInitial = newOffset === 0 && !append;
+    if (isInitial) setLoading(true);
+    else setLoadingMore(true);
+
+    try {
+      const data = await getAllAuthors({ offset: newOffset, limit: 20 });
+      const newItems = data?.items || [];
+      setAuthors((prev) => (append ? [...prev, ...newItems] : newItems));
+      setHasMore(data?.hasMore ?? false);
+      setOffset(newOffset);
+    } catch (err) {
+      toast.error(err?.friendlyMessage || "Unable to fetch authors right now.");
+    } finally {
+      if (isInitial) setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAuthors = async () => {
-      setLoading(true);
-      try {
-        const data = await getAllAuthors({ limit: 30 });
-        setAuthors(data?.items || []);
-      } catch (err) {
-        toast.error(
-          err?.friendlyMessage || "Unable to fetch authors right now."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAuthors();
+    fetchAuthors(0, false);
   }, []);
 
-  // 🪶 Filter authors by theme and search input
+  // 👀 Infinite Scroll Observer
+  useEffect(() => {
+    if (loading || loadingMore) return;
+    const sentinel = observerRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          fetchAuthors(offset + 1, true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [offset, hasMore, loadingMore, loading]);
+
+  // 🪶 Filter authors by theme and search
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return authors.filter((a) => {
@@ -59,24 +91,23 @@ export default function DiscoverAuthorsPage() {
   };
 
   const toggleTheme = (t) => {
-    if (activeTheme === t || t === "All") setActiveTheme("All");
-    else setActiveTheme(t);
+    setActiveTheme(activeTheme === t || t === "All" ? "All" : t);
   };
 
   return (
     <div className="min-h-screen bg-[#FAF9F5] text-[#3E5E4D] px-6 py-12">
-      {/* 🌸 Hero Section */}
+      {/* 🌸 Header */}
       <header className="max-w-4xl mx-auto text-center mb-10 animate-fadeIn">
         <div
           style={{ animation: "float 7s ease-in-out infinite" }}
           className="mx-auto mb-6 w-[220px]"
         >
           <Image
-            src={DEFAULTS.illustrations.reader}
+            src={DEFAULTS.illustrations.writer}
             alt="Authors illustration"
             width={220}
             height={160}
-            className="mx-auto w-full h-auto object-contain"
+            className="mx-auto object-contain"
             priority
           />
         </div>
@@ -89,10 +120,9 @@ export default function DiscoverAuthorsPage() {
         </p>
       </header>
 
-      {/* 🎨 Theme Filters + Search */}
+      {/* 🎨 Filters + Search */}
       <section className="max-w-5xl mx-auto mb-8">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
-          {/* Theme pills */}
           <div className="flex flex-wrap gap-3 justify-center md:justify-start">
             {THEMES.map((t) => {
               const active =
@@ -101,11 +131,10 @@ export default function DiscoverAuthorsPage() {
                 <button
                   key={t}
                   onClick={() => toggleTheme(t)}
-                  aria-label={`Filter by ${t}`}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition ${
                     active
                       ? "bg-[#A8BDA5] text-white shadow-sm"
-                      : "bg-white border border-[#E7DCCB] text-[#3E5E4D] hover:shadow"
+                      : "bg-white border border-[#E7DCCB] text-[#3E5E4D] hover:shadow-sm"
                   }`}
                 >
                   {t}
@@ -114,7 +143,7 @@ export default function DiscoverAuthorsPage() {
             })}
           </div>
 
-          {/* Search */}
+          {/* 🔍 Search */}
           <form
             onSubmit={handleSearch}
             className="ml-auto flex items-center gap-3 w-full md:max-w-sm"
@@ -122,15 +151,13 @@ export default function DiscoverAuthorsPage() {
             <div className="relative w-full">
               <input
                 type="search"
-                placeholder="Find an author or keyword..."
-                aria-label="Search authors"
+                placeholder="Find an author..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full rounded-full px-4 py-3 bg-white border border-[#E7DCCB] placeholder-[#a07b5a] text-sm focus:ring-2 focus:ring-[#A8BDA5] outline-none shadow-sm"
+                className="w-full rounded-full px-4 py-3 bg-white border border-[#E7DCCB] text-sm placeholder-[#a07b5a] focus:ring-2 focus:ring-[#A8BDA5] outline-none shadow-sm"
               />
               <button
                 type="submit"
-                aria-label="Search"
                 className="absolute right-1 top-1.5 px-3 py-1 rounded-full bg-[#A8BDA5] text-white text-sm hover:bg-[#8FA98B] transition"
               >
                 Search
@@ -143,106 +170,71 @@ export default function DiscoverAuthorsPage() {
       <hr className="max-w-5xl mx-auto border-t border-[#E7DCCB]/50 my-12" />
 
       {/* 🪶 Author Grid */}
-      <main className="max-w-6xl mx-auto transition-opacity duration-300">
+      <main className="max-w-6xl mx-auto">
         {loading ? (
           <p className="text-center text-[#6B705C] italic py-10">
             Fetching mindful voices...
           </p>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 animate-fadeIn">
-            <div
-              style={{ animation: "float 6s ease-in-out infinite" }}
-              className="mx-auto mb-6 w-40"
-            >
-              <Image
-                src={DEFAULTS.illustrations.meditation}
-                alt="Empty state illustration"
-                width={160}
-                height={160}
-                className="mx-auto"
-              />
-            </div>
-            <h2 className="font-['Playfair Display'] text-2xl font-semibold mb-3">
-              No authors found for this theme yet.
-            </h2>
-            <p className="text-[#6B705C] max-w-xl mx-auto">
-              Try another theme or search for an author you love.
-            </p>
-          </div>
+          <p className="text-center text-[#6B705C] italic py-10">
+            No authors found for this theme.
+          </p>
         ) : (
-          <section className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((a) => (
-              <Link
-                key={a.authorId}
-                href={`${APIROUTE.singleAuthor}${a.authorId}`}
-                className="block bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-[#A8BDA5]"
-              >
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-24 h-24 mb-4 rounded-full overflow-hidden bg-[#f1efe9] border border-[#e9e4db]">
-                    <Image
-                      src={safeGet(
-                        a.profilePictureUrl,
-                        DEFAULTS.author.profilePictureUrl
-                      )}
-                      alt={`${safeGet(
-                        a.fullName,
-                        DEFAULTS.author.fullName
-                      )} portrait`}
-                      width={100}
-                      height={100}
-                      className="object-cover w-full h-full"
-                    />
+          <>
+            <section className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((a) => (
+                <Link
+                  key={a.authorId}
+                  href={`${APIROUTE.singleAuthor}${a.authorId}`}
+                  className="block bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition transform hover:-translate-y-1"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-24 h-24 mb-4 rounded-full overflow-hidden bg-[#f1efe9] border border-[#e9e4db]">
+                      <SafeImage
+                        src={a?.profilePictureUrl}
+                        fallbackSrc={DEFAULTS.author.profilePictureUrl}
+                        alt={safeGet(a.fullName, DEFAULTS.author.fullName)}
+                        width={100}
+                        height={100}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+
+                    <h3 className="font-['Playfair Display'] text-xl font-semibold text-[#2b2b2b]">
+                      {safeGet(a.fullName, DEFAULTS.author.fullName)}
+                    </h3>
+                    <p className="text-sm text-[#6b705c] mt-1 mb-2 italic line-clamp-2">
+                      {safeGet(a.bio, DEFAULTS.author.bio)}
+                    </p>
+                    <p className="text-sm text-[#4A5B4D] italic mb-4">
+                      “{safeGet(a.quote, DEFAULTS.author.quote)}”
+                    </p>
+
+                    <span className="text-sm text-[#A8BDA5] font-semibold hover:underline">
+                      Read More →
+                    </span>
                   </div>
+                </Link>
+              ))}
+            </section>
 
-                  <h3 className="font-['Playfair Display'] text-xl font-semibold text-[#2b2b2b]">
-                    {safeGet(a.fullName, DEFAULTS.author.fullName)}
-                  </h3>
-                  <p className="text-sm text-[#6b705c] mt-1 mb-2 italic">
-                    {safeGet(a.bio, DEFAULTS.author.bio)}
+            {/* 👇 Sentinel for Infinite Scroll */}
+            {hasMore && (
+              <div
+                ref={observerRef}
+                className="h-16 flex justify-center items-center"
+              >
+                {loadingMore && (
+                  <p className="text-[#6B705C] italic">
+                    Loading more authors...
                   </p>
-                  <p className="text-sm text-[#4A5B4D] leading-relaxed italic mb-4">
-                    “{safeGet(a.quote, DEFAULTS.author.quote)}”
-                  </p>
-
-                  <span className="text-sm text-[#A8BDA5] font-semibold hover:underline">
-                    Read More →
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </section>
+                )}
+              </div>
+            )}
+          </>
         )}
       </main>
 
-      {/* 🌿 Reflective Footer Quote */}
-      <footer
-        className="max-w-3xl mx-auto text-center mt-16"
-        style={{
-          opacity: 0,
-          animation: "fadeInQuote 2.4s ease-in forwards",
-          animationDelay: "1.2s",
-        }}
-      >
-        <p className="italic text-[#4A5B4D]">{DEFAULTS.quotes[1]}</p>
-      </footer>
-
-      {/* 🌼 Join CTA */}
-      <div className="max-w-3xl mx-auto mt-20 text-center bg-[#A8BDA5]/10 border border-[#A8BDA5]/30 rounded-2xl py-10 px-6 shadow-sm">
-        <h2 className="font-['Playfair Display'] text-2xl font-semibold mb-3">
-          Join Mindful Reader
-        </h2>
-        <p className="text-[#4A5B4D] mb-6">
-          Connect with thoughtful voices and discover the stories that move you.
-        </p>
-        <Link
-          href={APIROUTE.signup}
-          className="bg-[#A8BDA5] text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-[#8FA98B]"
-        >
-          Get Started
-        </Link>
-      </div>
-
-      {/* ✨ Animations */}
       <style jsx>{`
         @keyframes float {
           0%,
@@ -251,16 +243,6 @@ export default function DiscoverAuthorsPage() {
           }
           50% {
             transform: translateY(-8px);
-          }
-        }
-        @keyframes fadeInQuote {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
           }
         }
       `}</style>

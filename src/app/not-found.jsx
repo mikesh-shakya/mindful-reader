@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { APIROUTE } from "../config/constants";
+import { DEFAULTS } from "@/config/defaults";
 
 export default function NotFound() {
   return (
@@ -16,7 +17,7 @@ export default function NotFound() {
         className="mb-10"
       >
         <Image
-          src="/illustrations/page-not-found.svg"
+          src={DEFAULTS.illustrations.pageNotFound}
           alt="Page not found"
           width={280}
           height={280}

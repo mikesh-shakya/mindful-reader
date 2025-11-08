@@ -9,6 +9,7 @@ import { getAllBooksByAuthor } from "@/services/BooksService";
 import { toast } from "react-toastify";
 import { DEFAULTS, safeGet } from "@/config/defaults";
 import { APIROUTE } from "@/config/constants";
+import SafeImage from "@/utilities/SafeImage";
 
 export default function AuthorDetailPage() {
   const { slug } = useParams();
@@ -72,16 +73,13 @@ export default function AuthorDetailPage() {
           style={{ animation: "float 7s ease-in-out infinite" }}
           className="mx-auto mb-6 w-[180px]"
         >
-          <Image
-            src={safeGet(
-              author.profilePictureUrl,
-              DEFAULTS.author.profilePictureUrl
-            )}
+          <SafeImage
+            src={author?.profilePictureUrl}
+            fallbackSrc={DEFAULTS.author.profilePictureUrl}
             alt={safeGet(author.fullName, DEFAULTS.author.fullName)}
             width={180}
             height={180}
             className="mx-auto rounded-full shadow-sm border border-[#E7DCCB] bg-white"
-            priority
           />
         </div>
 
@@ -123,12 +121,10 @@ export default function AuthorDetailPage() {
                 className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg transition transform hover:-translate-y-1"
               >
                 <div className="flex gap-4">
-                  <div className="w-24 h-32 flex-shrink-0 rounded-md overflow-hidden bg-[#f1efe9] border border-[#e9e4db]">
-                    <Image
-                      src={safeGet(
-                        book.coverImageUrl,
-                        DEFAULTS.book.coverImageUrl
-                      )}
+                  <div className="w-24 h-32 shrink-0 rounded-md overflow-hidden bg-[#f1efe9] border border-[#e9e4db]">
+                    <SafeImage
+                      src={book?.coverImageUrl}
+                      fallbackSrc={DEFAULTS.book.coverImageUrl}
                       alt={safeGet(book.title, DEFAULTS.book.title)}
                       width={120}
                       height={160}
@@ -155,16 +151,6 @@ export default function AuthorDetailPage() {
             ))}
           </div>
         )}
-      </section>
-
-      {/* 💬 Reflections Placeholder (optional future expansion) */}
-      <section className="max-w-4xl mx-auto mb-20 text-center">
-        <h2 className="font-['Playfair Display'] text-2xl font-semibold mb-6">
-          What Readers Say
-        </h2>
-        <p className="text-[#6B705C] italic">
-          Reader reflections will soon be added here.
-        </p>
       </section>
 
       {/* 🌾 Footer Quote */}

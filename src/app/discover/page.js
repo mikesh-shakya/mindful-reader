@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { APIROUTE } from "@/config/constants";
+import { DEFAULTS } from "@/config/defaults";
 
 export default function DiscoverPage() {
   return (
@@ -34,7 +35,7 @@ export default function DiscoverPage() {
             className="mb-6"
           >
             <Image
-              src="/illustrations/reading-time.svg"
+              src={DEFAULTS.illustrations.readingBook}
               alt="Discover Books"
               width={220}
               height={220}
@@ -67,7 +68,7 @@ export default function DiscoverPage() {
             className="mb-6"
           >
             <Image
-              src="/illustrations/writer.svg"
+              src={DEFAULTS.illustrations.writer}
               alt="Discover Authors"
               width={220}
               height={220}

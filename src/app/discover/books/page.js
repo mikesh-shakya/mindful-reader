@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { APIROUTE } from "@/config/constants";
 import { DEFAULTS, safeGet } from "@/config/defaults";
 import { toast } from "react-toastify";
 import { getAllBooks } from "@/services/BooksService";
+import SafeImage from "@/utilities/SafeImage";
 
 const MOODS = [
   "All",
@@ -25,29 +26,50 @@ export default function DiscoverBooksPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  // 🌿 Fetch books from backend
+  const observerRef = useRef(null);
+
+  // 🌿 Fetch books
+  const fetchBooks = async (newOffset = 0, append = false) => {
+    if (!hasMore && append) return;
+
+    const isInitial = newOffset === 0 && !append;
+    if (isInitial) setLoading(true);
+    else setLoadingMore(true);
+
+    try {
+      const data = await getAllBooks({ offset: newOffset, limit: 20 });
+      const newItems = data?.items || [];
+
+      setBooks((prev) => (append ? [...prev, ...newItems] : newItems));
+      setHasMore(data?.hasMore ?? false);
+      setOffset(newOffset);
+    } catch (err) {
+      toast.error(err?.friendlyMessage || "Could not load books right now.");
+    } finally {
+      if (isInitial) setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // 🔄 Initial fetch
   useEffect(() => {
-    const fetchBooks = async () => {
-      setLoading(true);
-      try {
-        const data = await getAllBooks({ limit: 30 });
-        setBooks(data?.items || []);
-      } catch (err) {
-        toast.error(err?.friendlyMessage || "Could not load books right now.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBooks();
+    fetchBooks(0, false);
   }, []);
 
-  // 🪷 Filter by mood and search
+  // 🔍 Filter books
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return books.filter((b) => {
       const moodOk = activeMood === "All" ? true : b.mood === activeMood;
-      const text = (b.title + " " + b.authorName).toLowerCase();
+      const text = (
+        b.title +
+        " " +
+        safeGet(b.author?.fullName, "")
+      ).toLowerCase();
       const searchOk = q ? text.includes(q) : true;
       return moodOk && searchOk;
     });
@@ -61,6 +83,26 @@ export default function DiscoverBooksPage() {
   const toggleMood = (m) => {
     setActiveMood(activeMood === m || m === "All" ? "All" : m);
   };
+
+  // 👀 Infinite scroll observer
+  useEffect(() => {
+    if (loading || loadingMore) return;
+    const sentinel = observerRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && hasMore && !loadingMore) {
+          fetchBooks(offset + 1, true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [offset, hasMore, loadingMore, loading]);
 
   return (
     <div className="min-h-screen bg-[#FAF9F5] text-[#3E5E4D] px-6 py-12">
@@ -113,7 +155,7 @@ export default function DiscoverBooksPage() {
             })}
           </div>
 
-          {/* Soft search */}
+          {/* Search */}
           <form
             onSubmit={handleSearchSubmit}
             className="ml-auto flex items-center gap-3 w-full md:max-w-sm"
@@ -121,7 +163,6 @@ export default function DiscoverBooksPage() {
             <div className="relative w-full">
               <input
                 type="search"
-                aria-label="Find a title or author"
                 placeholder="Find a title or author..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
@@ -169,80 +210,66 @@ export default function DiscoverBooksPage() {
             </p>
           </div>
         ) : (
-          <section className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((b) => (
-              <Link key={b.bookId} href={`${APIROUTE.singleBook}${b.bookId}`}>
-                <article className="bg-white rounded-2xl p-5 shadow hover:shadow-lg transition transform hover:-translate-y-2 cursor-pointer">
-                  <div className="flex items-start gap-4">
-                    <div className="w-24 h-32 shrink-0 rounded-md overflow-hidden bg-[#f1efe9] border border-[#e9e4db]">
-                      <Image
-                        src={safeGet(
-                          b.coverImageUrl,
-                          DEFAULTS.book.coverImageUrl
-                        )}
-                        alt={`${b.title} cover`}
-                        width={160}
-                        height={220}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
+          <>
+            <section className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((b) => (
+                <Link key={b.bookId} href={`${APIROUTE.singleBook}${b.bookId}`}>
+                  <article className="bg-white rounded-2xl p-5 shadow hover:shadow-lg transition transform hover:-translate-y-2 cursor-pointer">
+                    <div className="flex items-start gap-4">
+                      <div className="w-24 h-32 shrink-0 rounded-md overflow-hidden bg-[#f1efe9] border border-[#e9e4db]">
+                        <SafeImage
+                          src={b?.coverImageUrl}
+                          fallbackSrc={DEFAULTS.book.coverImageUrl}
+                          alt={safeGet(b.title, DEFAULTS.book.title)}
+                          width={120}
+                          height={220}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
 
-                    <div className="flex-1">
-                      <h3 className="font-['Playfair Display'] text-lg font-semibold text-[#2b2b2b]">
-                        {safeGet(b.title, DEFAULTS.book.title)}
-                      </h3>
-                      <p className="text-sm text-[#6b705c] mt-1 mb-3">
-                        {safeGet(b.authorName, DEFAULTS.book.authorName)}
-                      </p>
-                      <p className="text-sm text-[#4A5B4D] leading-relaxed mb-4">
-                        {DEFAULTS.book.quote}
-                      </p>
+                      <div className="flex-1">
+                        <h3 className="font-['Playfair Display'] text-lg font-semibold text-[#2b2b2b]">
+                          {safeGet(b.title, DEFAULTS.book.title)}
+                        </h3>
+                        <p className="text-sm text-[#6b705c] mt-1 mb-3">
+                          {safeGet(
+                            b.author?.fullName,
+                            DEFAULTS.book.authorName
+                          )}
+                        </p>
+                        <p className="text-sm text-[#4A5B4D] leading-relaxed mb-4">
+                          {DEFAULTS.book.quote}
+                        </p>
 
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs px-2 py-1 rounded-full bg-[#f3f2ee] border border-[#e7e3d9] text-[#6b705c]">
-                          {safeGet(b.genre, DEFAULTS.book.genre)}
-                        </span>
-                        <span className="text-sm text-[#A8BDA5] font-semibold hover:underline">
-                          Read more →
-                        </span>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-xs px-2 py-1 rounded-full bg-[#f3f2ee] border border-[#e7e3d9] text-[#6b705c]">
+                            {safeGet(b.genre, DEFAULTS.book.genre)}
+                          </span>
+                          <span className="text-sm text-[#A8BDA5] font-semibold hover:underline">
+                            Read more →
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </article>
-              </Link>
-            ))}
-          </section>
+                  </article>
+                </Link>
+              ))}
+            </section>
+
+            {/* 👇 Sentinel for Infinite Scroll */}
+            {hasMore && (
+              <div
+                ref={observerRef}
+                className="h-16 flex justify-center items-center"
+              >
+                {loadingMore && (
+                  <p className="text-[#6B705C] italic">Loading more...</p>
+                )}
+              </div>
+            )}
+          </>
         )}
       </main>
-
-      {/* 🌸 Reflective Footer */}
-      <footer
-        className="max-w-3xl mx-auto text-center mt-16"
-        style={{
-          opacity: 0,
-          animation: "fadeInQuote 1.6s ease-in forwards",
-          animationDelay: "1s",
-        }}
-      >
-        <p className="italic text-[#4A5B4D]">{DEFAULTS.quotes[0]}</p>
-      </footer>
-
-      {/* ✨ CTA */}
-      <div className="max-w-3xl mx-auto mt-16 text-center bg-[#A8BDA5]/10 border border-[#A8BDA5]/30 rounded-2xl py-10 px-6 shadow-sm">
-        <h2 className="font-['Playfair Display'] text-2xl font-semibold mb-3">
-          Create your mindful bookshelf
-        </h2>
-        <p className="text-[#4A5B4D] mb-6">
-          Curate your peaceful reading space and save stories that speak to your
-          soul.
-        </p>
-        <Link
-          href={APIROUTE.signup}
-          className="bg-[#A8BDA5] text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-[#8FA98B]"
-        >
-          Get Started
-        </Link>
-      </div>
 
       <style jsx>{`
         @keyframes float {
@@ -252,16 +279,6 @@ export default function DiscoverBooksPage() {
           }
           50% {
             transform: translateY(-8px);
-          }
-        }
-        @keyframes fadeInQuote {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
           }
         }
       `}</style>

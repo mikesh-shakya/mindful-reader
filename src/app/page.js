@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { APIROUTE } from "../config/constants";
+import { DEFAULTS } from "@/config/defaults";
 
 export default function Home() {
   return (
@@ -29,7 +30,7 @@ export default function Home() {
         {/* Hero Illustration */}
         <div className="flex-1 flex justify-center">
           <Image
-            src="/illustrations/book-lover.svg"
+            src={DEFAULTS.illustrations.bookLover}
             alt="Person reading a book calmly"
             width={400}
             height={300}
@@ -46,17 +47,17 @@ export default function Home() {
 
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-12 text-center">
           <Step
-            image="/illustrations/chatting.svg"
+            image={DEFAULTS.illustrations.chatting}
             title="Share your interests"
             desc="Tell us about themes and topics that matter to you."
           />
           <Step
-            image="/illustrations/bookshelves.svg"
+            image={DEFAULTS.illustrations.bookshelf}
             title="Get book suggestions"
             desc="Receive a personalized list of meaningful reads."
           />
           <Step
-            image="/illustrations/checklist2.svg"
+            image={DEFAULTS.illustrations.checklist}
             title="Keep track of your journey"
             desc="Log reads, set goals, and capture your reflections."
           />
@@ -71,17 +72,17 @@ export default function Home() {
 
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-12 text-center">
           <Feature
-            image="/illustrations/books.svg"
+            image={DEFAULTS.illustrations.books}
             title="Curated picks"
             desc="Handpicked recommendations for personal growth."
           />
           <Feature
-            image="/illustrations/goals.svg"
+            image={DEFAULTS.illustrations.goals}
             title="Reading goals"
             desc="Set your intentions and explore with purpose."
           />
           <Feature
-            image="/illustrations/writing.svg"
+            image={DEFAULTS.illustrations.writing}
             title="Reflective notes"
             desc="Jot down thoughts and deepen your understanding."
           />
