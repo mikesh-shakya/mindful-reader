@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { getAuthorsLOV } from "@/services/AuthorService";
 import { toast } from "react-toastify";
-import AddAuthorForm from "./AddAuthorForm";
+import AuthorForm from "./AuthorForm";
 
 export default function AuthorPickerModal({ open, onClose, onSelect }) {
   const [authors, setAuthors] = useState([]);
@@ -34,7 +34,7 @@ export default function AuthorPickerModal({ open, onClose, onSelect }) {
     }
   };
 
-  // 🌸 Author Create callback (from AddAuthorForm)
+  // 🌸 Author Create callback (from AuthorForm)
   const handleCreateAuthor = (author) => {
     // Immediately add to the list and select it
     setAuthors((prev) => [author, ...prev]);
@@ -149,7 +149,7 @@ export default function AuthorPickerModal({ open, onClose, onSelect }) {
         </div>
       </div>
 
-      {/* 🌸 Nested AddAuthorForm Modal */}
+      {/* 🌸 Nested AuthorForm Modal */}
       {showAddAuthor && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 shadow-lg w-full max-w-3xl relative animate-fadeIn">
@@ -159,7 +159,7 @@ export default function AuthorPickerModal({ open, onClose, onSelect }) {
             >
               ✕
             </button>
-            <AddAuthorForm onSuccess={handleCreateAuthor} />
+            <AuthorForm onSuccess={handleCreateAuthor} />
           </div>
         </div>
       )}

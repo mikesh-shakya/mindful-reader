@@ -61,9 +61,9 @@ export const addAuthor = async (author) => {
 };
 
 // 🍃 Update an author (private)
-export const updateAuthor = async (author, authorId) => {
+export const updateAuthor = async (authorId, author) => {
   try {
-    const { data } = await privateAxios.put(`/authors/${authorId}`, author);
+    const { data } = await privateAxios.patch(`/authors/${authorId}`, author);
     return data;
   } catch (err) {
     throw handleAxiosError(err, "updating author");

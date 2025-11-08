@@ -3,25 +3,39 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { toast } from "react-toastify";
-import { addAuthor } from "@/services/AuthorService";
+import { addAuthor, updateAuthor } from "@/services/AuthorService";
 import { DEFAULTS } from "@/config/defaults";
 
-export default function AddAuthorForm({ onSuccess }) {
-  const [form, setForm] = useState({
-    fullName: "",
-    penName: "",
-    bio: "",
-    nationality: "",
-    gender: "",
-    dateOfBirth: "",
-    profilePictureUrl: "",
-  });
+export default function AuthorForm({ mode = "add", author = null, onSuccess }) {
+  const [form, setForm] = useState(() =>
+    author
+      ? {
+          fullName: author.fullName || "",
+          penName: author.penName || "",
+          bio: author.bio || "",
+          nationality: author.nationality || "",
+          gender: author.gender || "",
+          dateOfBirth: author.dateOfBirth
+            ? author.dateOfBirth.slice(0, 10)
+            : "",
+          profilePictureUrl: author.profilePictureUrl || "",
+        }
+      : {
+          fullName: "",
+          penName: "",
+          bio: "",
+          nationality: "",
+          gender: "",
+          dateOfBirth: "",
+          profilePictureUrl: "",
+        }
+  );
 
   const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // 🌿 Validation helpers
+  // 🌿 Validate image URLs
   const isValidImageUrl = (url) => {
     if (!url) return true;
     try {
@@ -32,6 +46,7 @@ export default function AddAuthorForm({ onSuccess }) {
     }
   };
 
+  // 🌸 Field validation
   const validateField = (name, value) => {
     let message = "";
 
@@ -66,7 +81,7 @@ export default function AddAuthorForm({ onSuccess }) {
     if (name === "profilePictureUrl") setImageError(false);
   };
 
-  // 🌿 Live validation watcher
+  // 🌿 Live validation
   useEffect(() => {
     const timeout = setTimeout(() => {
       Object.entries(form).forEach(([key, value]) => {
@@ -76,12 +91,13 @@ export default function AddAuthorForm({ onSuccess }) {
     return () => clearTimeout(timeout);
   }, [form]);
 
+  // 🌿 Validate before submit
   const validateForm = () => {
     Object.keys(form).forEach((key) => validateField(key, form[key]));
     return Object.values(errors).every((e) => !e);
   };
 
-  // 🌸 Submit
+  // 🌼 Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -92,31 +108,57 @@ export default function AddAuthorForm({ onSuccess }) {
 
     try {
       setLoading(true);
-      const res = await addAuthor(form);
-      toast.success(`Author "${form.fullName}" added successfully!`);
-      setForm({
-        fullName: "",
-        penName: "",
-        bio: "",
-        nationality: "",
-        gender: "",
-        dateOfBirth: "",
-        profilePictureUrl: "",
-      });
-      setErrors({});
-      setImageError(false);
+      let res;
+
+      if (mode === "edit") {
+        res = await updateAuthor(author.authorId, form);
+        toast.success(`Author "${form.fullName}" updated successfully!`);
+      } else {
+        res = await addAuthor(form);
+        toast.success(`Author "${form.fullName}" added successfully!`);
+      }
+
+      if (mode === "add") {
+        setForm({
+          fullName: "",
+          penName: "",
+          bio: "",
+          nationality: "",
+          gender: "",
+          dateOfBirth: "",
+          profilePictureUrl: "",
+        });
+        setErrors({});
+        setImageError(false);
+      }
+
       if (onSuccess) onSuccess(res);
     } catch (err) {
-      toast.error(err?.friendlyMessage || "Could not add author right now.");
+      toast.error(err?.friendlyMessage || "Could not save author right now.");
     } finally {
       setLoading(false);
     }
   };
 
+  // 🧠 If editing, populate when author changes
+  useEffect(() => {
+    if (author) {
+      setForm({
+        fullName: author.fullName || "",
+        penName: author.penName || "",
+        bio: author.bio || "",
+        nationality: author.nationality || "",
+        gender: author.gender || "",
+        dateOfBirth: author.dateOfBirth ? author.dateOfBirth.slice(0, 10) : "",
+        profilePictureUrl: author.profilePictureUrl || "",
+      });
+    }
+  }, [author]);
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-[#E7DCCB]/60 max-w-3xl mx-auto p-8 transition-all duration-300">
       <h2 className="font-['Playfair Display'] text-2xl font-semibold mb-6 text-[#3E5E4D]">
-        ✍️ Add New Author
+        {mode === "edit" ? "✏️ Edit Author" : "✍️ Add New Author"}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -130,14 +172,13 @@ export default function AddAuthorForm({ onSuccess }) {
             name="fullName"
             value={form.fullName}
             onChange={handleChange}
-            className={`w-full rounded-xl px-4 py-3 border text-sm outline-none transition 
-              ${
-                errors.fullName
-                  ? "border-[#D9A79C] bg-[#FFF9F8]"
-                  : form.fullName
-                  ? "border-[#B6CBB4] bg-[#F8FBF7]"
-                  : "border-[#E7DCCB] bg-[#FAF9F5]"
-              } text-[#3E5E4D] placeholder-[#A07B5A]/60 focus:ring-2 focus:ring-[#A8BDA5]`}
+            className={`w-full rounded-xl px-4 py-3 border text-sm outline-none transition ${
+              errors.fullName
+                ? "border-[#D9A79C] bg-[#FFF9F8]"
+                : form.fullName
+                ? "border-[#B6CBB4] bg-[#F8FBF7]"
+                : "border-[#E7DCCB] bg-[#FAF9F5]"
+            } text-[#3E5E4D] focus:ring-2 focus:ring-[#A8BDA5]`}
             placeholder="Enter full name of author"
           />
           {errors.fullName && (
@@ -172,7 +213,7 @@ export default function AddAuthorForm({ onSuccess }) {
             rows={4}
             value={form.bio}
             onChange={handleChange}
-            className="w-full rounded-xl px-4 py-3 border border-[#E7DCCB] bg-[#FAF9F5] text-[#3E5E4D] placeholder-[#A07B5A]/60 text-sm focus:ring-2 focus:ring-[#A8BDA5] outline-none"
+            className="w-full rounded-xl px-4 py-3 border border-[#E7DCCB] bg-[#FAF9F5] text-[#3E5E4D] text-sm focus:ring-2 focus:ring-[#A8BDA5] outline-none"
             placeholder="A short bio of the author"
           />
         </div>
@@ -187,12 +228,12 @@ export default function AddAuthorForm({ onSuccess }) {
             name="nationality"
             value={form.nationality}
             onChange={handleChange}
-            className="w-full rounded-xl px-4 py-3 border border-[#E7DCCB] bg-[#FAF9F5] text-[#3E5E4D] placeholder-[#A07B5A]/60 text-sm focus:ring-2 focus:ring-[#A8BDA5] outline-none"
+            className="w-full rounded-xl px-4 py-3 border border-[#E7DCCB] bg-[#FAF9F5] text-[#3E5E4D] text-sm focus:ring-2 focus:ring-[#A8BDA5] outline-none"
             placeholder="British, American, etc."
           />
         </div>
 
-        {/* Gender + Date of Birth */}
+        {/* Gender + DOB */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-[#4A5B4D] mb-2">
@@ -202,14 +243,13 @@ export default function AddAuthorForm({ onSuccess }) {
               name="gender"
               value={form.gender}
               onChange={handleChange}
-              className={`w-full rounded-xl px-4 py-3 border text-sm outline-none transition 
-                ${
-                  errors.gender
-                    ? "border-[#D9A79C] bg-[#FFF9F8]"
-                    : form.gender
-                    ? "border-[#B6CBB4] bg-[#F8FBF7]"
-                    : "border-[#E7DCCB] bg-[#FAF9F5]"
-                } text-[#3E5E4D] focus:ring-2 focus:ring-[#A8BDA5]`}
+              className={`w-full rounded-xl px-4 py-3 border text-sm outline-none transition ${
+                errors.gender
+                  ? "border-[#D9A79C] bg-[#FFF9F8]"
+                  : form.gender
+                  ? "border-[#B6CBB4] bg-[#F8FBF7]"
+                  : "border-[#E7DCCB] bg-[#FAF9F5]"
+              } text-[#3E5E4D] focus:ring-2 focus:ring-[#A8BDA5]`}
             >
               <option value="">Select gender</option>
               <option value="MALE">Male</option>
@@ -264,7 +304,7 @@ export default function AddAuthorForm({ onSuccess }) {
           )}
         </div>
 
-        {/* Image Preview — Safe Rendering */}
+        {/* Preview */}
         {form.profilePictureUrl &&
           isValidImageUrl(form.profilePictureUrl) &&
           !imageError && (
@@ -316,7 +356,11 @@ export default function AddAuthorForm({ onSuccess }) {
                 : "bg-[#A8BDA5] hover:bg-[#8FA98B]"
             }`}
           >
-            {loading ? "Saving..." : "Add Author"}
+            {loading
+              ? "Saving..."
+              : mode === "edit"
+              ? "Update Author"
+              : "Add Author"}
           </button>
         </div>
       </form>

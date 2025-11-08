@@ -53,7 +53,7 @@ export const addBook = async (book) => {
 };
 
 // 🔹 Update a book (private)
-export const updateBook = async (book, bookId) => {
+export const updateBook = async (bookId, book) => {
   try {
     const { data } = await privateAxios.put(`/books/${bookId}`, book);
     return data;

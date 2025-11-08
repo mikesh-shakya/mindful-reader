@@ -73,13 +73,13 @@ export default function AdminHomePage() {
           + Add Author
         </Link>
         <Link
-          href={`${APIROUTE.addBook}`}
+          href={`${APIROUTE.manageBooks}`}
           className="bg-white border border-[#E7DCCB] text-[#3E5E4D] px-6 py-3 rounded-full hover:shadow-sm transition"
         >
           📚 Manage Books
         </Link>
         <Link
-          href={`${APIROUTE.addAuthor}`}
+          href={`${APIROUTE.manageAuthors}`}
           className="bg-white border border-[#E7DCCB] text-[#3E5E4D] px-6 py-3 rounded-full hover:shadow-sm transition"
         >
           ✍️ Manage Authors
